@@ -11,17 +11,20 @@
 
   <!-- Below is your custom application stylesheet -->
   <link href="styles/app.css" rel="stylesheet" type="text/css">
+
+  <script defer src="scripts/db.js"></script>
+  <script defer src="scripts/app.js"></script>
 </head>
 <body>
-  <p>This is my content!</p>
 
-  <button id="install-btn">Install app</button>
-
-<!-- The following element pulls in the script for the default template functionality -->
-<script src="scripts/install.js"></script>
-
-<!-- Below is your custom application script -->
-<script src="scripts/app.js"></script>
+  <article>
+    <!-- Database init page -->
+    <section id="db-init">
+      <form>
+        <input id="unihan-data-file-input" type="file">
+      </form>
+    </section>
+  </article>
 
 </body>
 </html>
