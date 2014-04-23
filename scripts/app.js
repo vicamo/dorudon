@@ -4,8 +4,14 @@
 'use strict';
 
 window.addEventListener('load', function() {
+  var self = this;
   this.DorudonDb.init(function successCb() {
-    alert('Success!');
+    self.DbInitUI.init();
+
+    if (self.DorudonDb.isPopulated()) {
+    } else {
+      self.DbInitUI.show();
+    }
   }, function failureCb(aErrorName) {
     alert(aErrorName);
   });

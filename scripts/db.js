@@ -39,6 +39,7 @@
   var READWRITE = 'readwrite';
 
   var _db = null;
+  var _populated = false;
 
   var upgradeFuncs = {
     upgradeSchema0: function(aDb, aTxn, aCallback) {
@@ -132,7 +133,13 @@
   }
 
   function initDb(aSuccessCb, aFailureCb) {
-    newTxn([STORE_NAME_DICT], READONLY, null, aSuccessCb, aFailureCb);
+    var req;
+    newTxn([STORE_NAME_DICT], READONLY, function(aTxn, aStores) {
+      req = aStores[0].count();
+    }, function() {
+      _populated = req.result != 0;
+      aSuccessCb && aSuccessCb();
+    }, aFailureCb);
   }
 
   function closeDb() {
@@ -142,9 +149,109 @@
     }
   }
 
+  function loadFileAsString(aFile, aEncoding, aSuccessCb, aFailureCb) {
+    var reader;
+
+    try {
+      reader = new FileReader();
+      reader.readAsText(aFile, aEncoding);
+    } catch(e) {
+      aFailureCb && aFailureCb(e.name);
+      return;
+    }
+
+    reader.onload = function(aEvent) {
+      aSuccessCb && aSuccessCb(aEvent.target.result);
+    };
+    reader.onerror = function(aEvent) {
+      aFailureCb && aFailureCb(aEvent.target.error.name);
+    };
+  }
+
+  function parseDictionaryLikeData(aString, aSuccessCb, aFailureCb) {
+    var lines = aString.split('\n');
+    var entries = [];
+    var re = new RegExp("^U\\+([0-9A-F]+)\\t(\\w+)\\t(.+)$");
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      // Skip lines begin with '#' and empty lines.
+      if (!line.length || line.charAt(0) === '#') {
+        continue;
+      }
+
+      var result;
+      if (!(result = line.match(re))) {
+        aFailureCb && aFailureCb('SyntaxError');
+        return;
+      }
+
+      entries.push({
+        code: parseInt(result[1], 16),
+        im: result[2],
+        value: result[3],
+      });
+    }
+
+    aSuccessCb && aSuccessCb(entries);
+  }
+
+  function populateDb(aEntries, aSuccessCb, aProgressCb, aFailureCb) {
+    if (!aEntries.length) {
+      aSuccessCb && aSuccessCb();
+      return;
+    }
+
+    newTxn([STORE_NAME_DICT], READWRITE, function(aTxn, aStores) {
+      return;
+      var dictStore = aStores[0];
+      var percentage = 0;
+
+      (function step(aIndex) {
+        var req = dictStore.put(aEntries[aIndex]);
+        if (aProgressCb) {
+          var p = Math.floor(aIndex / aEntries.length);
+          if (p != percentage) {
+            req.onsuccess = function() {
+              percentage = p;
+              try {
+                aProgressCb(percentage, "record put");
+              } catch(e) {
+                // Do nothing.
+              }
+
+              step(aIndex + 1);
+            };
+            return;
+          }
+        }
+
+        step(aIndex + 1);
+      })(0);
+    }, aSuccessCb, aFailureCb);
+  }
+
   var DorudonDb = {
     init: function(aSuccessCb, aFailureCb) {
       initDb(aSuccessCb, aFailureCb);
+    },
+
+    isPopulated: function() {
+      return _populated;
+    },
+
+    loadFromFile: function(aFile, aSuccessCb, aProgressCb, aFailureCb) {
+      if (this.isPopulated()) {
+        aFailureCb && aFailureCb('AlreadyPopulatedError');
+        return;
+      }
+
+      loadFileAsString(aFile, 'ascii', function(aString) {
+        aProgressCb && aProgressCb(0, "file loaded");
+
+        parseDictionaryLikeData(aString, function(aEntries) {
+          populateDb(aEntries, aSuccessCb, aProgressCb, aFailureCb);
+        }, aFailureCb);
+      }, aFailureCb);
     }
   };
 

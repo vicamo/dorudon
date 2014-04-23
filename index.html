@@ -13,15 +13,17 @@
   <link href="styles/app.css" rel="stylesheet" type="text/css">
 
   <script defer src="scripts/db.js"></script>
+  <script defer src="scripts/db-init-ui.js"></script>
   <script defer src="scripts/app.js"></script>
 </head>
 <body>
 
   <article>
     <!-- Database init page -->
-    <section id="db-init">
+    <section id="db-init-section" class="hide">
       <form>
-        <input id="unihan-data-file-input" type="file">
+        <input id="db-init-file-input" type="file">
+        <button id="db-init-submit-button" disabled>Load</button>
       </form>
     </section>
   </article>
