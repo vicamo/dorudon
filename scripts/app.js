@@ -4,7 +4,7 @@
 'use strict';
 
 window.addEventListener('load', function() {
-  this.dorudonDb.init(function successCb() {
+  this.DorudonDb.init(function successCb() {
     alert('Success!');
   }, function failureCb(aErrorName) {
     alert(aErrorName);

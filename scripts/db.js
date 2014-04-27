@@ -142,11 +142,11 @@
     }
   }
 
-  var dorudonDb = {
+  var DorudonDb = {
     init: function(aSuccessCb, aFailureCb) {
       initDb(aSuccessCb, aFailureCb);
     }
   };
 
-  exports.dorudonDb = dorudonDb;
+  exports.DorudonDb = DorudonDb;
 })(this);
